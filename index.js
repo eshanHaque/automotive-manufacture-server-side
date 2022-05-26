@@ -16,12 +16,27 @@ async function run() {
     try{
         await client.connect();
         const productCollection = client.db('manufacturer-web').collection('products');
+        const orderCollection = client.db('manufacturer-web').collection('order');
+      
+
 
         app.get('/product', async(req, res) =>{
             const query = {};
             const cursor = productCollection.find(query);
             const products = await cursor.toArray();
             res.send(products);
+        });
+
+
+        app.post('/order', async(req, res) =>{
+          const order = req.body;
+          const query ={product: order.product, productName: order.productName}
+          const exists = await orderCollection.findOne(query);
+          if(exists){
+            return res.send({success:false, order:exists})
+          }
+          const result = await orderCollection.insertOne(order);
+          return res.send({success: true, result});
         })
     }
     finally{
