@@ -17,7 +17,7 @@ async function run() {
         await client.connect();
         const productCollection = client.db('manufacturer-web').collection('products');
         const orderCollection = client.db('manufacturer-web').collection('order');
-      
+        const userCollection = client.db('manufacturer-web').collection('users');
 
 
         app.get('/product', async(req, res) =>{
@@ -28,15 +28,29 @@ async function run() {
         });
 
 
+
+        app.get('/order', async(req,res) =>{
+          const userEmail = req.query.userEmail;
+          const query = {userEmail: userEmail};
+          const orders = await orderCollection.find(query).toArray();
+          res.send(orders)
+        });
+
+
         app.post('/order', async(req, res) =>{
           const order = req.body;
-          const query ={product: order.product, productName: order.productName}
-          const exists = await orderCollection.findOne(query);
-          if(exists){
-            return res.send({success:false, order:exists})
-          }
           const result = await orderCollection.insertOne(order);
-          return res.send({success: true, result});
+          return res.send({result});
+        });
+
+        app.put('/user/:email', async (req, res) => {
+          const email = req.params.email;
+          const user = req.body;
+          const filter = { email: email };
+          const options = { upsert: true };
+          const updateDoc = { $set: user, };
+          const result = await userCollection.updateOne(filter, updateDoc, options);
+          res.send(result);
         })
     }
     finally{
