@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -34,6 +34,7 @@ async function run() {
     const productCollection = client.db('manufacturer-web').collection('products');
     const orderCollection = client.db('manufacturer-web').collection('order');
     const userCollection = client.db('manufacturer-web').collection('users');
+    const reviewCollection = client.db('manufacturer-web').collection('review');
 
 
     const verifyAdmin = async (req, res, next) => {
@@ -52,6 +53,12 @@ async function run() {
       const cursor = productCollection.find(query);
       const products = await cursor.toArray();
       res.send(products);
+  });
+    app.get('/review', async(req, res) =>{
+      const query = {};
+      const cursor = reviewCollection.find(query);
+      const reviews = await cursor.toArray();
+      res.send(reviews);
   });
 
     app.delete('/product/:name', async(req, res) =>{
@@ -89,8 +96,14 @@ async function run() {
         return res.status(403).send({ message: 'forbidden access' });
       }
     });
-
-
+    
+    app.get('/order/:id', verifyJWT, async(req, res) =>{
+      const id = req.params.id;
+      const query = {_id: ObjectId(id)};
+      const order = await orderCollection.findOne(query);
+      res.send(order);
+    });
+  
     app.post('/order', async (req, res) => {
       const order = req.body;
       const result = await orderCollection.insertOne(order);
